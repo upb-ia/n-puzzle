@@ -5,13 +5,15 @@ import java.util.*;
 public class Searcher {
 
     private PuzzleState root;
-    private List< PuzzleState > frontier;
+    //private List< PuzzleState > frontier;
+    private Queue< PuzzleState > frontier;
     private Set< PuzzleState > explored;
     private int nodeCounter;
     private long expanding;
     private long ordering;
     private long foreach;
     private long heuristica;
+    private long initialTime;
 
     public Searcher( PuzzleState root ) {
         this.root = root;
@@ -24,8 +26,18 @@ public class Searcher {
         ordering = 0L;
         foreach = 0L;
         heuristica = 0L;
+        initialTime = System.nanoTime();
 
-        frontier = new LinkedList<>();
+        //frontier = new LinkedList<>();
+        frontier= new PriorityQueue<>(  ( n1, n2 ) -> {
+            long startTime2 = System.nanoTime();//
+
+            int f_n1 = n1.getCost() + n1.heuristic();
+            int f_n2 = n2.getCost() + n2.heuristic();
+
+            heuristica += System.nanoTime() - startTime2; //
+
+            return Integer.compare(f_n1, f_n2);} );
         explored = new HashSet<>();
         frontier.add( root );
         long startTime;
@@ -34,7 +46,8 @@ public class Searcher {
                 return null;
             }
             startTime = System.nanoTime(); //
-            PuzzleState current = frontier.stream().min(  ( n1, n2 ) -> {
+            PuzzleState current = frontier.remove();
+            /*PuzzleState current = frontier.stream().min(  ( n1, n2 ) -> {
                 long startTime2 = System.nanoTime();//
 
                 int f_n1 = n1.getCost() + n1.heuristic();
@@ -42,19 +55,15 @@ public class Searcher {
 
                 heuristica += System.nanoTime() - startTime2; //
 
-                if ( f_n1 == f_n2 ) {
-                    return 0;
-                }
-                if ( f_n1 < f_n2 ) {
-                    return 1;
-                }
-                return -1;
-            }  ).get();
+                return Integer.compare(f_n1, f_n2);
+            }  ).get();*/
             ordering += System.nanoTime() - startTime; //
-            frontier.remove( current );
+            //frontier.remove( current );
             explored.add(current);
 
             if ( current.isGoalState() ) {
+                long totalTimeSeconds = (System.nanoTime() - initialTime )/1000000000L;
+                System.out.println("Solution found at depth "+current.depth()+" in " +totalTimeSeconds+" seconds");
                 return current;
             }
             startTime = System.nanoTime(); //
@@ -63,14 +72,14 @@ public class Searcher {
             nodeCounter++;
 
             startTime = System.nanoTime(); //
-            children.forEach( child -> {
+            for (PuzzleState child : children) {
 
                 if ( !explored.contains( child ) ) {
 
                     frontier.add( child );
 
                 }
-            } );
+            }
             foreach += System.nanoTime() - startTime; //
 
 
